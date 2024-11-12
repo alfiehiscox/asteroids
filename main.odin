@@ -11,13 +11,13 @@ main :: proc() {
 	defer rl.CloseWindow()
 	rl.SetTargetFPS(120)
 
-	ship := Ship{}
+	ship := Ship {
+		rot = 1.5708,
+	}
 
 	for !rl.WindowShouldClose() {
 		dt := rl.GetFrameTime()
 		{
-			ship.rot += 1 * dt
-
 			// Draw Loop 
 			rl.BeginDrawing()
 			defer rl.EndDrawing()

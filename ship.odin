@@ -10,11 +10,12 @@ Ship :: struct {
 }
 
 draw_ship :: proc(ship: Ship) {
-	points := [4][2]rl.Vector2 {
-		{{CENTER.x - 20, CENTER.y - 20}, {CENTER.x - 20, CENTER.y + 20}},
-		{{CENTER.x - 20, CENTER.y + 20}, {CENTER.x + 20, CENTER.y + 20}},
-		{{CENTER.x + 20, CENTER.y + 20}, {CENTER.x + 20, CENTER.y - 20}},
-		{{CENTER.x + 20, CENTER.y - 20}, {CENTER.x - 20, CENTER.y - 20}},
+	points := [5][2]rl.Vector2 {
+		{{CENTER.x, CENTER.y - 20}, {CENTER.x - 10, CENTER.y + 20}},
+		{{CENTER.x, CENTER.y - 20}, {CENTER.x + 10, CENTER.y + 20}},
+		{{CENTER.x - 7, CENTER.y + 17}, {CENTER.x + 7, CENTER.y + 17}},
+		{{CENTER.x - 10, CENTER.y + 20}, {CENTER.x - 7, CENTER.y + 17}},
+		{{CENTER.x + 10, CENTER.y + 20}, {CENTER.x + 7, CENTER.y + 17}},
 	}
 
 	// Apply Rotation
