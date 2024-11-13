@@ -1,5 +1,7 @@
 package main
 
+import "core:c"
+import "core:fmt"
 import "core:math"
 import "core:math/rand"
 import rl "vendor:raylib"
@@ -31,10 +33,10 @@ Asteroid :: struct {
 	pos:   rl.Vector2,
 	vel:   rl.Vector2,
 	size:  AsteroidSize,
-	verts: [ASTEROID_EDGES + 1]rl.Vector2,
+	verts: []rl.Vector2,
 }
 
-create_asteroid :: proc() -> Asteroid {
+init_asteroid :: proc() -> Asteroid {
 	size := rand.choice_enum(AsteroidSize)
 
 	pos, vel: rl.Vector2
@@ -62,11 +64,30 @@ create_asteroid :: proc() -> Asteroid {
 		vel.y = rand.float32_range(-90, 90)
 	}
 
+	verts := make_asteroid_verts(size, pos)
+
 	ast := Asteroid {
-		pos  = pos,
-		vel  = vel,
-		size = size,
+		pos   = pos,
+		vel   = vel,
+		size  = size,
+		verts = verts,
 	}
+
+	return ast
+}
+
+deinit_asteroids :: proc(asteroids: []Asteroid) {
+	for &asteroid in asteroids {
+		deinit_asteroid(&asteroid)
+	}
+}
+
+deinit_asteroid :: proc(asteroid: ^Asteroid) {
+	delete(asteroid.verts)
+}
+
+// Returns a allocated slice of vertices
+make_asteroid_verts :: proc(size: AsteroidSize, pos: rl.Vector2) -> []rl.Vector2 {
 
 	min_rad, max_rad: f32
 	switch size {
@@ -78,31 +99,78 @@ create_asteroid :: proc() -> Asteroid {
 		min_rad, max_rad = ASTEROID_SMALL_MIN_RAD, ASTEROID_SMALL_MAX_RAD
 	}
 
-	verts: [ASTEROID_EDGES + 1]rl.Vector2
-	for _, i in verts {
+	verts := make([]rl.Vector2, ASTEROID_EDGES + 1)
+
+	for &vert, i in verts {
 		if i == len(verts) - 1 {
-			verts[i] = verts[0]
+			vert = verts[0]
 		} else {
 			rads := f32(i) * (360 / ASTEROID_EDGES) * (math.PI / 180)
 			scalar := rand.float32_range(min_rad, max_rad)
-			verts[i] = rl.Vector2{math.cos(rads), math.sin(rads)} * scalar
+			vert = pos + rl.Vector2{math.cos(rads), math.sin(rads)} * scalar
 		}
 	}
 
-	ast.verts = verts
+	return verts
+}
 
-	return ast
+// Splits one asteroid into two at a smaller size. Each asteroid has allocated memory 
+// and needs to be deallocated. Asteroid passed in also need deallocating. 
+split_asteroid :: proc(asteroid: Asteroid) -> (a: Asteroid, b: Asteroid) {
+	switch asteroid.size {
+
+	case .Large:
+		a.size = .Medium
+		a.pos = asteroid.pos
+		a.vel = vel_at_45_degrees(asteroid.vel, true)
+		a.verts = make_asteroid_verts(a.size, asteroid.pos)
+
+		b.size = .Medium
+		b.pos = asteroid.pos
+		b.vel = vel_at_45_degrees(asteroid.vel, false)
+		b.verts = make_asteroid_verts(b.size, asteroid.pos)
+	case .Medium:
+		a.size = .Small
+		a.pos = asteroid.pos
+		a.vel = vel_at_45_degrees(asteroid.vel, true)
+		a.verts = make_asteroid_verts(a.size, asteroid.pos)
+
+		b.size = .Small
+		b.pos = asteroid.pos
+		b.vel = vel_at_45_degrees(asteroid.vel, false)
+		b.verts = make_asteroid_verts(b.size, asteroid.pos)
+	case .Small:
+		a.size = .Small
+		a.pos = asteroid.pos
+		a.vel = vel_at_45_degrees(asteroid.vel, true)
+		a.verts = make_asteroid_verts(a.size, asteroid.pos)
+
+		b.size = .Small
+		b.pos = asteroid.pos
+		b.vel = vel_at_45_degrees(asteroid.vel, false)
+		b.verts = make_asteroid_verts(b.size, asteroid.pos)
+	}
+
+	return a, b
+}
+
+vel_at_45_degrees :: proc(vel: rl.Vector2, clockwise: bool) -> (nvel: rl.Vector2) {
+	angle: f32 = math.PI / 4.0
+	angle = clockwise ? -angle : angle
+	c, s := math.cos(angle), math.sin(angle)
+	nvel.x = vel.x * c - vel.y * s
+	nvel.y = vel.x * s + vel.y * c
+	return
 }
 
 draw_asteroid :: proc(asteroid: ^Asteroid) {
-	points: [len(asteroid.verts)]rl.Vector2
-	for vert, i in asteroid.verts {
-		points[i] = asteroid.pos + vert
-	}
-	rl.DrawLineStrip(raw_data(points[:]), len(points), rl.WHITE)
+	rl.DrawLineStrip(raw_data(asteroid.verts), i32(len(asteroid.verts)), rl.WHITE)
 }
 
 update_asteroid :: proc(asteroid: ^Asteroid, dt: f32) {
+	for &vert in asteroid.verts {
+		vert += asteroid.vel * dt
+	}
 	asteroid.pos += asteroid.vel * dt
 }
 
