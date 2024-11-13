@@ -21,6 +21,10 @@ main :: proc() {
 	missiles: [dynamic]Missile
 	defer delete(missiles)
 
+	asteroids: [dynamic]Asteroid
+	defer delete(asteroids)
+
+
 	for !rl.WindowShouldClose() {
 		dt := rl.GetFrameTime()
 
@@ -33,6 +37,8 @@ main :: proc() {
 		if rl.IsKeyPressed(.SPACE) {
 			missile := new_missile(ship.dir)
 			append(&missiles, missile)
+			asteroid := create_asteroid()
+			append(&asteroids, asteroid)
 		}
 
 		for &missile, i in missiles {
@@ -40,6 +46,15 @@ main :: proc() {
 				unordered_remove(&missiles, i)
 			} else {
 				update_missile(&missile, dt)
+			}
+		}
+
+		for &asteroid, i in asteroids {
+			if asteroid_out_of_bounds(asteroid) {
+				unordered_remove(&asteroids, i)
+				fmt.printf("removed asteroid at index: %d\n", i)
+			} else {
+				update_asteroid(&asteroid, dt)
 			}
 		}
 
@@ -56,6 +71,9 @@ main :: proc() {
 				draw_missile(missile)
 			}
 
+			for &asteroid in asteroids {
+				draw_asteroid(&asteroid)
+			}
 		}
 	}
 }
