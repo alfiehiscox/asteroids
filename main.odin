@@ -13,6 +13,7 @@ WINDOW_HEIGHT :: 800
 GameState :: enum {
 	GamePlaying,
 	GameOverAnimation,
+	GameOver,
 }
 
 main :: proc() {
@@ -40,6 +41,7 @@ main :: proc() {
 	game_state := GameState.GamePlaying
 	end := false
 
+	lives := 3
 	score: f32 = 0
 
 	game_over_animation_timer: f32 = 0
@@ -52,12 +54,14 @@ main :: proc() {
 			game_state = game_playing_update(&ship, &missiles, &asteroids, &score, dt)
 			if game_state == .GameOverAnimation {
 				game_over_animation_timer = SHIP_DESTROY_ANIMATION_LENGTH
+				lives -= 1
 				destroyed_ship = create_destroyed_ship()
 			}
 		case .GameOverAnimation:
 			game_state, game_over_animation_timer = game_over_animation_update(
 				&destroyed_ship,
 				game_over_animation_timer,
+				lives,
 				dt,
 			)
 			if game_state == .GamePlaying {
@@ -65,6 +69,16 @@ main :: proc() {
 				deinit_asteroids(asteroids)
 				clear(&asteroids)
 				ship = create_ship()
+			}
+		case .GameOver:
+			clear(&missiles)
+			deinit_asteroids(asteroids)
+			clear(&asteroids)
+
+			if rl.IsKeyPressed(.SPACE) {
+				game_state = .GamePlaying
+				lives = 3
+				score = 0
 			}
 		}
 
@@ -78,11 +92,15 @@ main :: proc() {
 			switch game_state {
 			case .GamePlaying:
 				draw_ship(&ship)
+				draw_score(score)
+				draw_lives(lives)
 			case .GameOverAnimation:
 				draw_destroyed_ship(&destroyed_ship, score)
+				draw_score(score)
+				draw_lives(lives)
+			case .GameOver:
+				draw_game_over(score)
 			}
-
-			draw_score(score)
 
 			for missile in missiles {
 				draw_missile(missile)
@@ -131,7 +149,14 @@ game_playing_update :: proc(
 			for missile, j in missiles {
 				asteroid_collides_with_missile(asteroid, missile) or_continue
 
-				score^ += ASTEROID_SCORE
+				switch asteroid.size {
+				case .Large:
+					score^ += ASTEROID_LARGE_SCORE
+				case .Medium:
+					score^ += ASTEROID_MEDIUM_SCORE
+				case .Small:
+					score^ += ASTEROID_SMALL_SCORE
+				}
 
 				if asteroid.size != .Small {
 					a, b := split_asteroid(asteroid)
@@ -159,6 +184,7 @@ game_playing_update :: proc(
 game_over_animation_update :: proc(
 	ship: ^DestroyedShip,
 	current_timer: f32,
+	lives: int,
 	dt: f32,
 ) -> (
 	new_state: GameState,
@@ -170,7 +196,7 @@ game_over_animation_update :: proc(
 	// Do state machine things
 	new_timer = current_timer - dt
 	if new_timer <= 0 {
-		new_state = .GamePlaying
+		new_state = .GamePlaying if lives > 0 else .GameOver
 	} else {
 		new_state = .GameOverAnimation
 	}
@@ -181,10 +207,45 @@ game_over_animation_update :: proc(
 draw_score :: proc(score: f32) {
 	sb := strings.builder_make()
 	defer strings.builder_destroy(&sb)
-	fmt.sbprintf(&sb, "Score %f", score)
+	fmt.sbprintf(&sb, "Score: %f", score)
 	str := strings.clone_to_cstring(strings.to_string(sb))
 	defer delete(str)
 	rl.DrawText(str, 20, 20, 10, rl.WHITE)
+}
+
+draw_lives :: proc(lives: int) {
+	for i in 0 ..< lives {
+		ship := create_ship()
+		offset := rl.Vector2{30 + (f32(i) * 25), 50}
+		for vert in ship.verts {
+			rl.DrawLineV(vert[0] - CENTER.x + offset, vert[1] - CENTER.y + offset, rl.WHITE)
+		}
+	}
+}
+
+draw_game_over :: proc(score: f32) {
+	sb := strings.builder_make()
+	defer strings.builder_destroy(&sb)
+
+	fmt.sbprintf(&sb, "Score: %f", score)
+
+	str := strings.clone_to_cstring(strings.to_string(sb))
+	defer delete(str)
+
+	game_over_msg := strings.clone_to_cstring("Game Over!")
+	defer delete(game_over_msg)
+
+	game_over_width := f32(rl.MeasureText(game_over_msg, 30))
+	score_width := f32(rl.MeasureText(str, 30))
+
+	rl.DrawText(
+		game_over_msg,
+		i32(CENTER.x - game_over_width / 2),
+		i32(CENTER.y - 40),
+		30,
+		rl.WHITE,
+	)
+	rl.DrawText(str, i32(CENTER.x - score_width / 2), i32(CENTER.y + 10), 30, rl.WHITE)
 }
 
 check_leaks :: proc(tracking: ^mem.Tracking_Allocator) {
