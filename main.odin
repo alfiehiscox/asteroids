@@ -4,6 +4,7 @@ import "core:fmt"
 import "core:math"
 import "core:math/rand"
 import "core:mem"
+import "core:strings"
 import rl "vendor:raylib"
 
 WINDOW_WIDTH :: 800
@@ -39,6 +40,8 @@ main :: proc() {
 	game_state := GameState.GamePlaying
 	end := false
 
+	score: f32 = 0
+
 	game_over_animation_timer: f32 = 0
 
 	for !rl.WindowShouldClose() && !end {
@@ -46,7 +49,7 @@ main :: proc() {
 
 		switch game_state {
 		case .GamePlaying:
-			game_state = game_playing_update(&ship, &missiles, &asteroids, dt)
+			game_state = game_playing_update(&ship, &missiles, &asteroids, &score, dt)
 			if game_state == .GameOverAnimation {
 				game_over_animation_timer = SHIP_DESTROY_ANIMATION_LENGTH
 				destroyed_ship = create_destroyed_ship()
@@ -76,8 +79,10 @@ main :: proc() {
 			case .GamePlaying:
 				draw_ship(&ship)
 			case .GameOverAnimation:
-				draw_destroyed_ship(&destroyed_ship)
+				draw_destroyed_ship(&destroyed_ship, score)
 			}
+
+			draw_score(score)
 
 			for missile in missiles {
 				draw_missile(missile)
@@ -94,6 +99,7 @@ game_playing_update :: proc(
 	ship: ^Ship,
 	missiles: ^[dynamic]Missile,
 	asteroids: ^[dynamic]Asteroid,
+	score: ^f32,
 	dt: f32,
 ) -> GameState {
 
@@ -119,12 +125,13 @@ game_playing_update :: proc(
 			deinit_asteroid(&asteroid)
 			unordered_remove(asteroids, i)
 		} else if asteroid_collides_with_ship(asteroid) {
-			// fmt.println("You Lost!")
 			return .GameOverAnimation
 		} else {
 			collision := false
 			for missile, j in missiles {
 				asteroid_collides_with_missile(asteroid, missile) or_continue
+
+				score^ += ASTEROID_SCORE
 
 				if asteroid.size != .Small {
 					a, b := split_asteroid(asteroid)
@@ -169,6 +176,15 @@ game_over_animation_update :: proc(
 	}
 
 	return new_state, new_timer
+}
+
+draw_score :: proc(score: f32) {
+	sb := strings.builder_make()
+	defer strings.builder_destroy(&sb)
+	fmt.sbprintf(&sb, "Score %f", score)
+	str := strings.clone_to_cstring(strings.to_string(sb))
+	defer delete(str)
+	rl.DrawText(str, 20, 20, 10, rl.WHITE)
 }
 
 check_leaks :: proc(tracking: ^mem.Tracking_Allocator) {

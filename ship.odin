@@ -81,7 +81,7 @@ update_destroyed_ship :: proc(ship: ^DestroyedShip, dt: f32) {
 	}
 }
 
-draw_destroyed_ship :: proc(ship: ^DestroyedShip) {
+draw_destroyed_ship :: proc(ship: ^DestroyedShip, score: f32) {
 	for vec, i in ship.verts {
 		rl.DrawLineV(vec[0], vec[1], rl.WHITE)
 	}
