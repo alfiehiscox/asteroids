@@ -64,28 +64,30 @@ main :: proc() {
 			if asteroid_out_of_bounds(asteroid) {
 				deinit_asteroid(&asteroid)
 				unordered_remove(&asteroids, i)
+			} else if asteroid_collides_with_ship(asteroid) {
+				fmt.println("You Lost!")
+				end = true
 			} else {
-
+				collision := false
 				for missile, j in missiles {
-					if asteroid_collides_with_missile(asteroid, missile) {
-						defer {
-							deinit_asteroid(&asteroids[i])
-							unordered_remove(&asteroids, i)
-							unordered_remove(&missiles, j)
-						}
-						if asteroid.size != .Small {
-							a, b := split_asteroid(asteroids[i])
-							append(&asteroids, a, b)
-						}
+					asteroid_collides_with_missile(asteroid, missile) or_continue
+
+					if asteroid.size != .Small {
+						a, b := split_asteroid(asteroid)
+						append(&asteroids, a, b)
 					}
+
+					deinit_asteroid(&asteroid)
+					unordered_remove(&asteroids, i)
+					unordered_remove(&missiles, j)
+					collision = true
+					break
 				}
 
-				if asteroid_collides_with_ship(asteroid) {
-					fmt.println("You Lost!")
-					end = true
+				// Only update if the asteroid hasn't had a collision
+				if !collision {
+					update_asteroid(&asteroid, dt)
 				}
-
-				update_asteroid(&asteroid, dt)
 			}
 		}
 
