@@ -15,6 +15,6 @@ Raylib Version: **v5.0.0**
 If you have odin, you have everything you need: 
 
 ```
-git clone ...
+git clone https://github.com/alfiehiscox/asteroids.git
 odin run asteroids 
 ```
