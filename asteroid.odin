@@ -3,6 +3,7 @@ package main
 import "core:c"
 import "core:fmt"
 import "core:math"
+import "core:math/linalg"
 import "core:math/rand"
 import rl "vendor:raylib"
 
@@ -186,4 +187,35 @@ asteroid_out_of_bounds :: proc(asteroid: Asteroid) -> bool {
 	}
 
 	return false
+}
+
+asteroid_collides_with_missile :: proc(asteroid: Asteroid, missile: Missile) -> bool {
+	switch asteroid.size {
+	case .Large:
+		return linalg.distance(asteroid.pos, missile.pos) < ASTEROID_LARGE_MAX_RAD
+	case .Medium:
+		return linalg.distance(asteroid.pos, missile.pos) < ASTEROID_MEDIUM_MAX_RAD
+	case .Small:
+		return linalg.distance(asteroid.pos, missile.pos) < ASTEROID_SMALL_MAX_RAD
+	case:
+		return false
+	}
+}
+
+asteroid_collides_with_ship :: proc(asteroid: Asteroid) -> bool {
+	dir := linalg.normalize(CENTER - asteroid.pos)
+	scaled: rl.Vector2
+	switch asteroid.size {
+	case .Large:
+		scaled = dir * ASTEROID_LARGE_MAX_RAD
+	case .Medium:
+		scaled = dir * ASTEROID_MEDIUM_MAX_RAD
+	case .Small:
+		scaled = dir * ASTEROID_SMALL_MAX_RAD
+	}
+
+	positioned := asteroid.pos + scaled
+	dist := linalg.distance(positioned, CENTER)
+	return dist < SHIP_COLLISION_RADIUS
+
 }

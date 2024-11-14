@@ -4,10 +4,12 @@ import "core:math"
 import "core:math/linalg"
 import rl "vendor:raylib"
 
-MISSILE_SPEED :: rl.Vector2{100, 100}
-MISSILE_LENGTH :: 10
 CENTER :: rl.Vector2{WINDOW_WIDTH / 2, WINDOW_HEIGHT / 2}
-POINTS :: [5][2]rl.Vector2 {
+
+MISSILE_SPEED :: rl.Vector2{200, 200}
+MISSILE_LENGTH :: 5
+SHIP_COLLISION_RADIUS :: 10
+SHIP_VERTICES :: [5][2]rl.Vector2 {
 	{{CENTER.x, CENTER.y - 10}, {CENTER.x - 10, CENTER.y + 10}},
 	{{CENTER.x, CENTER.y - 10}, {CENTER.x + 10, CENTER.y + 10}},
 	{{CENTER.x - 7, CENTER.y + 7}, {CENTER.x + 7, CENTER.y + 7}},
@@ -22,7 +24,7 @@ Ship :: struct {
 
 draw_ship :: proc(ship: ^Ship) {
 	// Apply Rotation to points
-	for vec, i in POINTS {
+	for vec, i in SHIP_VERTICES {
 		newx := rotate(vec[0], CENTER, ship.rot)
 		newy := rotate(vec[1], CENTER, ship.rot)
 		rl.DrawLineV(newx, newy, rl.WHITE)

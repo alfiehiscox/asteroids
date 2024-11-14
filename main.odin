@@ -34,7 +34,9 @@ main :: proc() {
 	defer deinit_asteroids(asteroids[:])
 	defer delete(asteroids)
 
-	for !rl.WindowShouldClose() {
+	end := false
+
+	for !rl.WindowShouldClose() && !end {
 		dt := rl.GetFrameTime()
 
 		if rl.IsKeyDown(.LEFT) {
@@ -63,19 +65,28 @@ main :: proc() {
 				deinit_asteroid(&asteroid)
 				unordered_remove(&asteroids, i)
 			} else {
+
+				for missile, j in missiles {
+					if asteroid_collides_with_missile(asteroid, missile) {
+						defer {
+							deinit_asteroid(&asteroids[i])
+							unordered_remove(&asteroids, i)
+							unordered_remove(&missiles, j)
+						}
+						if asteroid.size != .Small {
+							a, b := split_asteroid(asteroids[i])
+							append(&asteroids, a, b)
+						}
+					}
+				}
+
+				if asteroid_collides_with_ship(asteroid) {
+					fmt.println("You Lost!")
+					end = true
+				}
+
 				update_asteroid(&asteroid, dt)
 			}
-		}
-
-		if rl.IsKeyPressed(.S) {
-			asteroid_index := rand.int_max(len(asteroids))
-			defer {
-				deinit_asteroid(&asteroids[asteroid_index])
-				unordered_remove(&asteroids, asteroid_index)
-			}
-
-			a, b := split_asteroid(asteroids[asteroid_index])
-			append(&asteroids, a, b)
 		}
 
 		{
