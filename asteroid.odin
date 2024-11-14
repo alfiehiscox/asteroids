@@ -77,7 +77,7 @@ init_asteroid :: proc() -> Asteroid {
 	return ast
 }
 
-deinit_asteroids :: proc(asteroids: []Asteroid) {
+deinit_asteroids :: proc(asteroids: [dynamic]Asteroid) {
 	for &asteroid in asteroids {
 		deinit_asteroid(&asteroid)
 	}
