@@ -19,6 +19,13 @@ ASTEROID_SMALL_MAX_RAD :: 10
 ASTEROID_SMALL_SCORE :: 50
 ASTEROID_MEDIUM_SCORE :: 25
 ASTEROID_LARGE_SCORE :: 25
+ASTEROID_MAX_SPAWN_TIME :: 1 // In Seconds
+
+// The amount of spawns before the difficulty 
+// is ramped up. Higher difficultly is a quicker 
+// spawn rate.
+ASTEROID_DIFFICULTY_THRESHOLD :: 10
+ASTEROID_DIFFICULTY_SCALAR :: 0.8
 
 AsteroidSize :: enum {
 	Small,

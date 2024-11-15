@@ -46,17 +46,38 @@ main :: proc() {
 
 	game_over_animation_timer: f32 = 0
 
+	asteroid_spawn_count: int = 0
+	asteroid_spawn_timer: f32 = 0
+	asteroid_spawn_difficulty: f32 = 1
+
 	for !rl.WindowShouldClose() && !end {
 		dt := rl.GetFrameTime()
 
 		switch game_state {
 		case .GamePlaying:
-			game_state = game_playing_update(&ship, &missiles, &asteroids, &score, dt)
+			game_state = game_playing_update(
+				&ship,
+				&missiles,
+				&asteroids,
+				&score,
+				&asteroid_spawn_timer,
+				dt,
+			)
+
+			spawn_new_asteroids(
+				&asteroid_spawn_timer,
+				&asteroid_spawn_count,
+				&asteroid_spawn_difficulty,
+				&asteroids,
+				dt,
+			)
+
 			if game_state == .GameOverAnimation {
 				game_over_animation_timer = SHIP_DESTROY_ANIMATION_LENGTH
 				lives -= 1
 				destroyed_ship = create_destroyed_ship()
 			}
+
 		case .GameOverAnimation:
 			game_state, game_over_animation_timer = game_over_animation_update(
 				&destroyed_ship,
@@ -79,6 +100,10 @@ main :: proc() {
 				game_state = .GamePlaying
 				lives = 3
 				score = 0
+				game_over_animation_timer = 0
+				asteroid_spawn_count = 0
+				asteroid_spawn_timer = 0
+				asteroid_spawn_difficulty = 1
 			}
 		}
 
@@ -118,6 +143,7 @@ game_playing_update :: proc(
 	missiles: ^[dynamic]Missile,
 	asteroids: ^[dynamic]Asteroid,
 	score: ^f32,
+	asteroid_spawn_timer: ^f32,
 	dt: f32,
 ) -> GameState {
 
@@ -126,8 +152,6 @@ game_playing_update :: proc(
 	if rl.IsKeyPressed(.SPACE) {
 		missile := new_missile(ship.dir)
 		append(missiles, missile)
-		asteroid := init_asteroid()
-		append(asteroids, asteroid)
 	}
 
 	for &missile, i in missiles {
@@ -178,6 +202,29 @@ game_playing_update :: proc(
 	}
 
 	return .GamePlaying
+}
+
+spawn_new_asteroids :: proc(
+	asteroid_spawn_timer: ^f32,
+	asteroid_spawn_count: ^int,
+	asteroid_spawn_difficulty: ^f32,
+	asteroids: ^[dynamic]Asteroid,
+	dt: f32,
+) {
+	if asteroid_spawn_timer^ <= 0 {
+		asteroid := init_asteroid()
+		append(asteroids, asteroid)
+		asteroid_spawn_timer^ = ASTEROID_MAX_SPAWN_TIME * asteroid_spawn_difficulty^
+		asteroid_spawn_count^ += 1
+
+		if asteroid_spawn_count^ >= ASTEROID_DIFFICULTY_THRESHOLD {
+			fmt.println("Increasing Difficulty")
+			asteroid_spawn_difficulty^ *= ASTEROID_DIFFICULTY_SCALAR
+			asteroid_spawn_count^ = 0
+		}
+	} else {
+		asteroid_spawn_timer^ -= dt
+	}
 }
 
 
