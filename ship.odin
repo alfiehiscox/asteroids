@@ -13,21 +13,21 @@ SHIP_COLLISION_RADIUS :: 10
 SHIP_ROTATION_SPEED :: 5
 SHIP_DESTROY_ANIMATION_LENGTH :: 2 // seconds
 SHIP_INITIAL_VERTICES :: [5][2]rl.Vector2 {
-	{{CENTER.x, CENTER.y - 10}, {CENTER.x - 10, CENTER.y + 10}},
-	{{CENTER.x, CENTER.y - 10}, {CENTER.x + 10, CENTER.y + 10}},
-	{{CENTER.x - 7, CENTER.y + 7}, {CENTER.x + 7, CENTER.y + 7}},
-	{{CENTER.x - 10, CENTER.y + 10}, {CENTER.x - 7, CENTER.y + 7}},
-	{{CENTER.x + 10, CENTER.y + 10}, {CENTER.x + 7, CENTER.y + 7}},
+	{{0, -10}, {-10, 10}},
+	{{0, -10}, {10, 10}},
+	{{-7, 7}, {7, 7}},
+	{{-10, 10}, {-7, +7}},
+	{{10, 10}, {7, 7}},
 }
 
 DESTROYED_SHIP_SPEED :: 20
 DESTROYED_SHIP_INITIAL_VERTICES :: [6][2]rl.Vector2 {
-	{{CENTER.x - 2, CENTER.y - 10}, {CENTER.x - 8, CENTER.y + 4}},
-	{{CENTER.x, CENTER.y - 12}, {CENTER.x + 3, CENTER.y - 9}},
-	{{CENTER.x + 2, CENTER.y - 7}, {CENTER.x + 12, CENTER.y - 6}},
-	{{CENTER.x + 10, CENTER.y}, {CENTER.x + 13, CENTER.y + 8}},
-	{{CENTER.x + 2, CENTER.y + 2}, {CENTER.x + 6, CENTER.y + 1}},
-	{{CENTER.x - 2, CENTER.y + 2}, {CENTER.x, CENTER.y + 9}},
+	{{-2, -10}, {-8, 4}},
+	{{0, -12}, {3, -9}},
+	{{2, -7}, {12, -6}},
+	{{10, 0}, {13, 8}},
+	{{2, 2}, {6, 1}},
+	{{-2, 2}, {0, 9}},
 }
 
 Ship :: struct {
@@ -51,8 +51,8 @@ update_ship :: proc(ship: ^Ship, dt: f32) {
 draw_ship :: proc(ship: ^Ship) {
 	// Apply Rotation to points
 	for vec, i in ship.verts {
-		newx := rotate(vec[0], CENTER, ship.rot)
-		newy := rotate(vec[1], CENTER, ship.rot)
+		newx := rotate(vec[0], ship.rot) + CENTER
+		newy := rotate(vec[1], ship.rot) + CENTER
 		rl.DrawLineV(newx, newy, rl.WHITE)
 
 		// Calculate current direction
@@ -73,7 +73,11 @@ create_destroyed_ship :: proc() -> DestroyedShip {
 
 update_destroyed_ship :: proc(ship: ^DestroyedShip, dt: f32) {
 	for &vert in ship.verts {
-		midpoint := rl.Vector2{(vert[0].x + vert[1].x) / 2, (vert[0].y + vert[1].y) / 2}
+		center_start, center_end := vert[0] + CENTER, vert[1] + CENTER
+		midpoint := rl.Vector2 {
+			(center_start.x + center_end.x) / 2,
+			(center_start.y + center_end.y) / 2,
+		}
 		dir := linalg.normalize(midpoint - CENTER)
 		vel := dir * DESTROYED_SHIP_SPEED
 		vert[0] += vel * dt
@@ -82,18 +86,19 @@ update_destroyed_ship :: proc(ship: ^DestroyedShip, dt: f32) {
 }
 
 draw_destroyed_ship :: proc(ship: ^DestroyedShip, score: f32) {
-	for vec, i in ship.verts {
-		rl.DrawLineV(vec[0], vec[1], rl.WHITE)
+	for &vec, i in ship.verts {
+		rl.DrawLineV(vec[0] + CENTER, vec[1] + CENTER, rl.WHITE)
 	}
 }
 
-rotate :: proc(vec: rl.Vector2, center: rl.Vector2, rotation: f32) -> rl.Vector2 {
+rotate :: proc(vec: rl.Vector2, rotation: f32) -> rl.Vector2 {
 	c, s := math.cos(rotation), math.sin(rotation)
-	translated_x := vec.x - center.x
-	translated_y := vec.y - center.y
-	new_x := (translated_x * c) - (translated_y * s)
-	new_y := (translated_x * s) + (translated_y * c)
-	return rl.Vector2{new_x + center.x, new_y + center.y}
+	// translated_x := vec.x - center.x
+	// translated_y := vec.y - center.y
+	new_x := (vec.x * c) - (vec.y * s)
+	new_y := (vec.x * s) + (vec.y * c)
+	//return rl.Vector2{new_x + center.x, new_y + center.y}
+	return rl.Vector2{new_x, new_y}
 }
 
 Missile :: struct {

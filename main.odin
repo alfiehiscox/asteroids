@@ -8,7 +8,7 @@ import "core:strings"
 import rl "vendor:raylib"
 
 WINDOW_WIDTH :: 800
-WINDOW_HEIGHT :: 800
+WINDOW_HEIGHT :: 600
 
 GameState :: enum {
 	GamePlaying,
@@ -210,15 +210,15 @@ draw_score :: proc(score: f32) {
 	fmt.sbprintf(&sb, "Score: %f", score)
 	str := strings.clone_to_cstring(strings.to_string(sb))
 	defer delete(str)
-	rl.DrawText(str, 20, 20, 10, rl.WHITE)
+	rl.DrawText(str, 25, 25, 15, rl.WHITE)
 }
 
 draw_lives :: proc(lives: int) {
 	for i in 0 ..< lives {
 		ship := create_ship()
-		offset := rl.Vector2{30 + (f32(i) * 25), 50}
+		offset := rl.Vector2{(f32(i) * 30) + 40, 60}
 		for vert in ship.verts {
-			rl.DrawLineV(vert[0] - CENTER.x + offset, vert[1] - CENTER.y + offset, rl.WHITE)
+			rl.DrawLineV(vert[0] + offset, vert[1] + offset, rl.WHITE)
 		}
 	}
 }
