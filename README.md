@@ -6,7 +6,7 @@ with [odin](https://odin-lang.org/).
 
 ## Example
 
-![example]()
+![example](https://github.com/alfiehiscox/asteroids/blob/main/asteroids.gif)
 
 ## Details 
 
