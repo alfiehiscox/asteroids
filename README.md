@@ -10,6 +10,8 @@ Odin Version: **dev-2024-09-nightly**
 
 Raylib Version: **v5.0.0**
 
+OS: **macOS monterey**
+
 ## Usage 
 
 If you have odin, you have everything you need: 
