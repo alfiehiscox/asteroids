@@ -31,15 +31,14 @@ main :: proc() {
 	ship := create_ship()
 	destroyed_ship: DestroyedShip
 
-	missiles: [dynamic]Missile
+	missiles := make([dynamic]Missile)
 	defer delete(missiles)
 
-	asteroids: [dynamic]Asteroid
-	defer deinit_asteroids(asteroids)
+	asteroids := make([dynamic]Asteroid)
 	defer delete(asteroids)
+	defer deinit_asteroids(&asteroids)
 
 	game_state := GameState.GamePlaying
-	end := false
 
 	lives := 3
 	score: f32 = 0
@@ -50,19 +49,12 @@ main :: proc() {
 	asteroid_spawn_timer: f32 = 0
 	asteroid_spawn_difficulty: f32 = 1
 
-	for !rl.WindowShouldClose() && !end {
+	for !rl.WindowShouldClose() {
 		dt := rl.GetFrameTime()
 
 		switch game_state {
 		case .GamePlaying:
-			game_state = game_playing_update(
-				&ship,
-				&missiles,
-				&asteroids,
-				&score,
-				&asteroid_spawn_timer,
-				dt,
-			)
+			game_state = game_playing_update(&ship, &missiles, &asteroids, &score, dt)
 
 			spawn_new_asteroids(
 				&asteroid_spawn_timer,
@@ -87,13 +79,13 @@ main :: proc() {
 			)
 			if game_state == .GamePlaying {
 				clear(&missiles)
-				deinit_asteroids(asteroids)
+				deinit_asteroids(&asteroids)
 				clear(&asteroids)
 				ship = create_ship()
 			}
 		case .GameOver:
 			clear(&missiles)
-			deinit_asteroids(asteroids)
+			deinit_asteroids(&asteroids)
 			clear(&asteroids)
 
 			if rl.IsKeyPressed(.SPACE) {
@@ -132,7 +124,7 @@ main :: proc() {
 			}
 
 			for &asteroid in asteroids {
-				draw_asteroid(&asteroid)
+				draw_asteroid(asteroid)
 			}
 		}
 	}
@@ -143,7 +135,6 @@ game_playing_update :: proc(
 	missiles: ^[dynamic]Missile,
 	asteroids: ^[dynamic]Asteroid,
 	score: ^f32,
-	asteroid_spawn_timer: ^f32,
 	dt: f32,
 ) -> GameState {
 

@@ -87,14 +87,14 @@ init_asteroid :: proc() -> Asteroid {
 	return ast
 }
 
-deinit_asteroids :: proc(asteroids: [dynamic]Asteroid) {
+deinit_asteroids :: proc(asteroids: ^[dynamic]Asteroid) {
 	for &asteroid in asteroids {
 		deinit_asteroid(&asteroid)
 	}
 }
 
 deinit_asteroid :: proc(asteroid: ^Asteroid) {
-	delete(asteroid.verts)
+	delete(asteroid^.verts)
 }
 
 // Returns a allocated slice of vertices
@@ -174,7 +174,7 @@ vel_at_45_degrees :: proc(vel: rl.Vector2, clockwise: bool) -> (nvel: rl.Vector2
 	return
 }
 
-draw_asteroid :: proc(asteroid: ^Asteroid) {
+draw_asteroid :: proc(asteroid: Asteroid) {
 	rl.DrawLineStrip(raw_data(asteroid.verts), i32(len(asteroid.verts)), rl.WHITE)
 }
 
